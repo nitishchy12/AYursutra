@@ -1,5 +1,5 @@
 services:
-  # Backend Service
+  # Backend API
   - type: web
     name: ayursutra-api
     env: node
@@ -14,10 +14,11 @@ services:
       - key: PORT
         value: 5000
 
-  # Frontend Static Site
+  # Frontend Web (Static Site)
   - type: static
     name: ayursutra-web
     env: static
+    # Using root directory since your Vite project is there
     buildCommand: npm install && npm run build
     publishDir: dist
     envVars:
