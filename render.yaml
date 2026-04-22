@@ -1,0 +1,25 @@
+services:
+  # Backend Service
+  - type: web
+    name: ayursutra-api
+    env: node
+    rootDir: server
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: PORT
+        value: 5000
+
+  # Frontend Static Site
+  - type: static
+    name: ayursutra-web
+    env: static
+    buildCommand: npm install && npm run build
+    publishDir: dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://ayursutra-api.onrender.com

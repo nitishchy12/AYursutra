@@ -1,4 +1,4 @@
-const IS_STATIC = true; // Toggle this to true to bypass backend
+const IS_STATIC = false; // Toggle this to true to bypass backend
 
 // ─── Helpers ───────────────────────────────────────────────
 
