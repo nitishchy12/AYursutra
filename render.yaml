@@ -7,8 +7,8 @@ services:
     startCommand: npm start
     envVars:
       - key: MONGO_URI
-        value: mongodb+srv://lalapilane1_db_user:MHaETBmEfKad6Kcl@cluster0.q0cmctd.mongodb.net/?appName=Cluster0
+        sync: false
       - key: JWT_SECRET
-        value: ayursutra_dev_secret_key_2024
+        sync: false
       - key: PORT
         value: 5000
