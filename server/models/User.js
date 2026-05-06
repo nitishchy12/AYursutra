@@ -24,12 +24,20 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['user', 'admin'],
-    default: 'user',
+    enum: ['patient', 'practitioner', 'admin'],
+    default: 'patient',
   },
+  specialization: [{ type: String }],
+  notificationPreferences: {
+    inApp: { type: Boolean, default: true },
+    email: { type: Boolean, default: true },
+    sms: { type: Boolean, default: false },
+  },
+  phone: { type: String, default: '' },
+  refreshTokenHash: { type: String, select: false },
   dosha: {
     type: String,
-    enum: ['Vata', 'Pitta', 'Kapha', null],
+    enum: ['Vata', 'Pitta', 'Kapha', 'Vata-Pitta', 'Pitta-Kapha', 'Vata-Kapha', 'Tridosha', null],
     default: null,
   },
   doshaScores: {
@@ -46,8 +54,8 @@ const userSchema = new mongoose.Schema({
     default: '',
   },
   age: {
-    type: String,
-    default: '',
+    type: Number,
+    default: null,
   },
   gender: {
     type: String,

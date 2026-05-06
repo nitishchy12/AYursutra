@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // Pages
 import Home from './pages/Home';
@@ -17,13 +18,17 @@ import DietPlan from './pages/DietPlan';
 import Therapy from './pages/Therapy';
 import Appointments from './pages/Appointments';
 import SessionCenters from './pages/SessionCenters';
+import Notifications from './pages/Notifications';
+import Feedback from './pages/Feedback';
+import PatientDetails from './pages/PatientDetails';
 
 function App() {
   return (
     <AuthProvider>
       <Router>
         <Navbar />
-        <main className="page">
+        <main>
+          <ErrorBoundary>
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
@@ -47,7 +52,23 @@ function App() {
                 <DietPlan />
               </ProtectedRoute>
             } />
+            <Route path="/notifications" element={
+              <ProtectedRoute>
+                <Notifications />
+              </ProtectedRoute>
+            } />
+            <Route path="/patients/:id" element={
+              <ProtectedRoute role="practitioner">
+                <PatientDetails />
+              </ProtectedRoute>
+            } />
+            <Route path="/feedback" element={
+              <ProtectedRoute role="patient">
+                <Feedback />
+              </ProtectedRoute>
+            } />
           </Routes>
+          </ErrorBoundary>
         </main>
       </Router>
     </AuthProvider>

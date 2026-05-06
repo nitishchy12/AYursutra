@@ -1,92 +1,59 @@
 const express = require('express');
 const Post = require('../models/Post');
 const { protect, optionalAuth } = require('../middleware/auth');
+const { asyncHandler } = require('../middleware/errorHandler');
 
 const router = express.Router();
 
-// GET /api/posts — list all posts (newest first)
-router.get('/', optionalAuth, async (req, res) => {
-  try {
-    const posts = await Post.find()
-      .sort({ createdAt: -1 })
-      .lean();
+function formatPost(post, userId) {
+  const raw = post.toObject ? post.toObject() : post;
+  const likedByMe = userId ? raw.likes.some((id) => String(id) === String(userId)) : false;
+  return {
+    _id: raw._id,
+    id: String(raw._id),
+    content: raw.content,
+    author: raw.author,
+    authorName: raw.author?.name || 'AyurSutra Member',
+    likesCount: raw.likesCount || raw.likes.length,
+    likes: raw.likes.map(String),
+    likedByMe,
+    createdAt: raw.createdAt,
+  };
+}
 
-    // Convert ObjectId likes to strings for frontend comparison
-    const formattedPosts = posts.map(post => ({
-      ...post,
-      id: post._id.toString(),
-      likes: post.likes.map(id => id.toString()),
-      createdAt: post.createdAt,
-    }));
+router.get('/', optionalAuth, asyncHandler(async (req, res) => {
+  const posts = await Post.find().populate('author', 'name').sort({ createdAt: -1 });
+  res.json({ success: true, data: posts.map((post) => formatPost(post, req.user?._id)), posts: posts.map((post) => formatPost(post, req.user?._id)) });
+}));
 
-    res.json({ posts: formattedPosts });
-  } catch (error) {
-    console.error('Get posts error:', error);
-    res.status(500).json({ message: 'Server error fetching posts' });
+router.post('/', protect, asyncHandler(async (req, res) => {
+  const content = String(req.body.content || '').trim();
+  if (!content) return res.status(400).json({ success: false, message: 'Post content is required' });
+  if (content.length > 500) return res.status(400).json({ success: false, message: 'Post cannot exceed 500 characters' });
+  const post = await Post.create({ content, author: req.user._id, likes: [], likesCount: 0 });
+  await post.populate('author', 'name');
+  res.status(201).json({ success: true, data: formatPost(post, req.user._id), post: formatPost(post, req.user._id) });
+}));
+
+router.delete('/:id', protect, asyncHandler(async (req, res) => {
+  const post = await Post.findById(req.params.id);
+  if (!post) return res.status(404).json({ success: false, message: 'Post not found' });
+  if (String(post.author) !== String(req.user._id) && req.user.role !== 'admin') {
+    return res.status(403).json({ success: false, message: 'Only the author or admin can delete this post' });
   }
-});
+  await post.deleteOne();
+  res.json({ success: true, data: null });
+}));
 
-// POST /api/posts — create a new post
-router.post('/', protect, async (req, res) => {
-  try {
-    const { content } = req.body;
-
-    if (!content || !content.trim()) {
-      return res.status(400).json({ message: 'Post content is required' });
-    }
-
-    const post = await Post.create({
-      content: content.trim(),
-      authorId: req.user._id,
-      authorName: req.user.name,
-      likes: [],
-      commentCount: 0,
-    });
-
-    res.status(201).json({
-      post: {
-        ...post.toObject(),
-        id: post._id.toString(),
-        likes: [],
-      },
-    });
-  } catch (error) {
-    console.error('Create post error:', error);
-    res.status(500).json({ message: 'Server error creating post' });
-  }
-});
-
-// PUT /api/posts/:id/like — toggle like on a post
-router.put('/:id/like', protect, async (req, res) => {
-  try {
-    const post = await Post.findById(req.params.id);
-
-    if (!post) {
-      return res.status(404).json({ message: 'Post not found' });
-    }
-
-    const userId = req.user._id;
-    const hasLiked = post.likes.some(id => id.equals(userId));
-
-    if (hasLiked) {
-      post.likes = post.likes.filter(id => !id.equals(userId));
-    } else {
-      post.likes.push(userId);
-    }
-
-    await post.save();
-
-    res.json({
-      post: {
-        ...post.toObject(),
-        id: post._id.toString(),
-        likes: post.likes.map(id => id.toString()),
-      },
-    });
-  } catch (error) {
-    console.error('Toggle like error:', error);
-    res.status(500).json({ message: 'Server error toggling like' });
-  }
-});
+router.put('/:id/like', protect, asyncHandler(async (req, res) => {
+  const post = await Post.findById(req.params.id).populate('author', 'name');
+  if (!post) return res.status(404).json({ success: false, message: 'Post not found' });
+  const liked = post.likes.some((id) => String(id) === String(req.user._id));
+  post.likes = liked ? post.likes.filter((id) => String(id) !== String(req.user._id)) : [...post.likes, req.user._id];
+  post.likesCount = post.likes.length;
+  await post.save();
+  await post.populate('author', 'name');
+  res.json({ success: true, data: formatPost(post, req.user._id), post: formatPost(post, req.user._id) });
+}));
 
 module.exports = router;

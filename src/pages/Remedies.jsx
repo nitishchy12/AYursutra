@@ -1,138 +1,99 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { apiGetHerbs, apiSeedHerbs } from '../services/api';
-import { useAuth } from '../context/AuthContext';
-import { Leaf, Plus, RefreshCw, Search } from 'lucide-react';
+import { Leaf, RefreshCw, Search } from 'lucide-react';
+import toast from 'react-hot-toast';
 
-const Remedies = () => {
-  const { userData } = useAuth();
+const doshas = ['All', 'Vata', 'Pitta', 'Kapha'];
+
+export default function Remedies() {
   const [herbs, setHerbs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [dosha, setDosha] = useState('All');
   const [seeding, setSeeding] = useState(false);
 
-  const fetchHerbs = async () => {
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchTerm), 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  useEffect(() => { fetchHerbs(); }, [debouncedSearch, dosha]);
+
+  async function fetchHerbs() {
     setLoading(true);
     try {
-      const data = await apiGetHerbs();
-      setHerbs(data.herbs);
-    } catch (error) {
-      console.error("Error fetching herbs:", error);
+      const data = await apiGetHerbs({ search: debouncedSearch || undefined, dosha: dosha === 'All' ? undefined : dosha, limit: 60 });
+      setHerbs(data.data || data.herbs || []);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-  };
+  }
 
-  useEffect(() => {
-    fetchHerbs();
-  }, []);
-
-  const handleSeedData = async () => {
+  async function handleSeedData() {
     setSeeding(true);
     try {
       await apiSeedHerbs();
+      toast.success('Herbal database seeded');
       await fetchHerbs();
-    } catch (error) {
-      console.error("Error seeding data:", error);
+    } finally {
+      setSeeding(false);
     }
-    setSeeding(false);
-  };
+  }
 
-  const filteredHerbs = herbs.filter(herb => 
-    herb.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    herb.benefits.some(b => b.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const categories = useMemo(() => [...new Set(herbs.map((h) => h.category).filter(Boolean))], [herbs]);
 
   return (
     <div className="container page">
-      <header className="text-center" style={{ marginBottom: '3rem' }}>
-        <h1 style={{ fontSize: '2.5rem', color: 'var(--primary-dark)', marginBottom: '1rem' }}>Ayurvedic Herbal Remedies</h1>
-        <p style={{ color: 'var(--text-secondary)', maxWidth: '600px', margin: '0 auto' }}>
-          Explore our comprehensive database of natural herbs, their profound health benefits, and traditional Ayurvedic applications.
-        </p>
+      <header className="text-center" style={{ marginBottom: '2rem' }}>
+        <h1 style={{ fontSize: '2.5rem', color: 'var(--primary-dark)' }}>Ayurvedic Herbal Remedies</h1>
+        <p className="muted">Search DB-backed herbs and filter by dosha-balancing properties.</p>
       </header>
 
-      <div className="flex justify-between items-center" style={{ marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
-        <div style={{ position: 'relative', width: '100%', maxWidth: '400px' }}>
-          <Search style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} size={20} />
-          <input 
-            type="text" 
-            placeholder="Search herbs or benefits..." 
-            className="input-field"
-            style={{ width: '100%', paddingLeft: '3rem' }}
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+      <div className="toolbar">
+        <div style={{ position: 'relative', width: '100%', maxWidth: 420 }}>
+          <Search style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} size={20} />
+          <input className="input-field" style={{ width: '100%', paddingLeft: 42 }} placeholder="Search ashwagandha, digestion, skin..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
         </div>
-
-        {userData?.role === 'admin' && (
-          <button className="btn btn-secondary">
-            <Plus size={18} /> Add New Herb
-          </button>
-        )}
+        <div className="tabs" style={{ margin: 0 }}>
+          {doshas.map((item) => <button key={item} className={dosha === item ? 'active' : ''} onClick={() => setDosha(item)}>{item}</button>)}
+        </div>
+        <button className="btn btn-secondary" onClick={handleSeedData} disabled={seeding}>{seeding ? 'Seeding...' : 'Seed Initial Data'}</button>
       </div>
 
       {loading ? (
-        <div className="text-center" style={{ padding: '4rem 0' }}>
-          <RefreshCw className="animate-spin" size={32} color="var(--primary-color)" style={{ margin: '0 auto 1rem' }} />
-          <p>Loading herbal remedies...</p>
-        </div>
+        <div className="empty-state"><RefreshCw className="animate-spin" /><p>Loading herbal remedies...</p></div>
       ) : herbs.length === 0 ? (
-        <div className="card text-center" style={{ padding: '4rem 2rem' }}>
-          <Leaf size={48} color="var(--text-secondary)" style={{ margin: '0 auto 1rem', opacity: 0.5 }} />
-          <h3>No herbs found</h3>
-          <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>The herbal database is currently empty.</p>
-          <button 
-            onClick={handleSeedData} 
-            disabled={seeding}
-            className="btn btn-primary"
-          >
-            {seeding ? 'Seeding Data...' : 'Seed Initial Data'}
-          </button>
-        </div>
+        <div className="empty-state"><Leaf size={42} /><h3>No herbs found</h3><p>The herbal database is empty or no herbs match your filter.</p><button onClick={handleSeedData} className="btn btn-primary">Seed Initial Data</button></div>
       ) : (
-        <div className="grid grid-cols-2" style={{ gap: '2rem' }}>
-          {filteredHerbs.map(herb => (
-            <div key={herb.id || herb._id} className="card" style={{ display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden' }}>
-              <div style={{ height: '200px', width: '100%', backgroundColor: 'var(--border-color)', backgroundImage: `url(${herb.image})`, backgroundSize: 'cover', backgroundPosition: 'center' }}></div>
-              <div style={{ padding: '1.5rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                <div className="flex justify-between items-start" style={{ marginBottom: '0.5rem' }}>
-                  <h3 style={{ margin: 0, fontSize: '1.4rem' }}>{herb.name}</h3>
+        <>
+          <p className="muted" style={{ marginBottom: 16 }}>{herbs.length} herbs loaded {categories.length ? `across ${categories.length} categories` : ''}</p>
+          <div className="grid grid-cols-2" style={{ gap: '1.5rem' }}>
+            {herbs.map((herb) => (
+              <article key={herb._id || herb.id} className="card herb-card">
+                <img src={herb.imageUrl || herb.image} alt={herb.name} />
+                <div>
+                  <div className="flex justify-between items-start gap-4">
+                    <div>
+                      <h3>{herb.name}</h3>
+                      <p className="muted"><em>{herb.scientificName}</em></p>
+                    </div>
+                    <span className="pill">{herb.category}</span>
+                  </div>
+                  <p>{herb.description}</p>
+                  <div className="dosha-pills">
+                    {['Vata', 'Pitta', 'Kapha'].map((item) => <span key={item} className={herb.doshaBalance?.[item.toLowerCase()] ? 'on' : ''}>{item[0]}</span>)}
+                  </div>
+                  <h4>Benefits</h4>
+                  <ul>{(herb.benefits || []).slice(0, 6).map((benefit) => <li key={benefit}>{benefit}</li>)}</ul>
+                  <div className="info-strip"><strong>Usage:</strong> {herb.usage || herb.usageMethod}</div>
+                  <div className="info-strip"><strong>Precautions:</strong> {herb.precautions}</div>
                 </div>
-                
-                <div className="flex items-center gap-2 flex-wrap" style={{ marginBottom: '1rem' }}>
-                  {herb.recommendedFor.map(dosha => (
-                    <span key={dosha} style={{ fontSize: '0.75rem', backgroundColor: 'var(--bg-color)', border: '1px solid var(--border-color)', padding: '0.2rem 0.5rem', borderRadius: 'var(--radius-lg)', color: 'var(--text-secondary)' }}>
-                      Good for {dosha}
-                    </span>
-                  ))}
-                  {userData?.dosha && herb.recommendedFor.includes(userData.dosha) && (
-                    <span style={{ fontSize: '0.75rem', backgroundColor: 'rgba(76, 175, 80, 0.1)', color: 'var(--primary-dark)', padding: '0.2rem 0.5rem', borderRadius: 'var(--radius-lg)', fontWeight: 'bold' }}>
-                      Recommended for You
-                    </span>
-                  )}
-                </div>
-
-                <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', flex: 1 }}>{herb.description}</p>
-                
-                <div style={{ marginBottom: '1rem' }}>
-                  <h4 style={{ fontSize: '0.9rem', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Key Benefits</h4>
-                  <ul style={{ paddingLeft: '1.2rem', color: 'var(--text-primary)', margin: 0 }}>
-                    {herb.benefits.map((benefit, i) => (
-                      <li key={i}>{benefit}</li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div style={{ backgroundColor: 'var(--bg-color)', padding: '1rem', borderRadius: 'var(--radius-sm)' }}>
-                  <h4 style={{ fontSize: '0.9rem', color: 'var(--primary-dark)', marginBottom: '0.25rem' }}>How to Use</h4>
-                  <p style={{ fontSize: '0.9rem', margin: 0 }}>{herb.usageMethod}</p>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+              </article>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );
-};
-
-export default Remedies;
+}

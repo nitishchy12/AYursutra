@@ -5,27 +5,15 @@ const postSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Post content is required'],
     trim: true,
-    maxlength: [2000, 'Post cannot exceed 2000 characters'],
+    maxlength: [500, 'Post cannot exceed 500 characters'],
   },
-  authorId: {
+  author: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true,
   },
-  authorName: {
-    type: String,
-    required: true,
-  },
-  likes: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-  }],
-  commentCount: {
-    type: Number,
-    default: 0,
-  },
-}, {
-  timestamps: true,
-});
+  likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  likesCount: { type: Number, default: 0 },
+}, { timestamps: true });
 
 module.exports = mongoose.model('Post', postSchema);

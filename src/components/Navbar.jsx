@@ -2,15 +2,17 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Menu, X, Leaf, LogOut, User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import NotificationCenter from './NotificationCenter';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = React.useState(false);
   const { currentUser, userData, logout } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/');
+    setIsOpen(false);
   };
 
   const toggleMenu = () => setIsOpen(!isOpen);
@@ -99,6 +101,7 @@ const Navbar = () => {
                   <User size={20} />
                   {userData?.name || 'Dashboard'}
                 </Link>
+                <NotificationCenter />
                 <button onClick={handleLogout} className="btn btn-secondary" style={{ padding: '0.4rem 0.8rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                   <LogOut size={16} /> Logout
                 </button>
@@ -132,7 +135,7 @@ const Navbar = () => {
               <Link to="/dashboard" className="btn btn-primary" onClick={toggleMenu}>
                 <User size={20} /> Dashboard
               </Link>
-              <button onClick={() => { handleLogout(); toggleMenu(); }} className="btn btn-secondary" style={{ display: 'flex', justifyContent: 'center' }}>
+              <button onClick={handleLogout} className="btn btn-secondary" style={{ display: 'flex', justifyContent: 'center' }}>
                 <LogOut size={20} /> Logout
               </button>
             </>

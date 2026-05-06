@@ -144,7 +144,7 @@ const Therapy = () => {
               ))}
             </ul>
 
-            <Link to="/appointments" className="btn btn-primary" style={{ width: '100%', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+            <Link to={`/appointments?therapyType=${encodeURIComponent(session.title.split(' ')[0])}`} className="btn btn-primary" style={{ width: '100%', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
               Book This Session <ArrowRight size={18} />
             </Link>
           </div>

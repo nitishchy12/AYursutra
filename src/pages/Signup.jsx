@@ -7,6 +7,7 @@ const Signup = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [role, setRole] = useState('patient');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
@@ -17,7 +18,7 @@ const Signup = () => {
     setError('');
     setIsLoading(true);
     try {
-      await register(name, email, password);
+      await register(name, email, password, role);
       navigate('/dashboard');
     } catch (err) {
       setError(err.message);
@@ -91,6 +92,15 @@ const Signup = () => {
               required
               minLength="6"
             />
+          </div>
+
+          <div className="input-group">
+            <label htmlFor="role">Role</label>
+            <select id="role" className="input-field" value={role} onChange={(e) => setRole(e.target.value)}>
+              <option value="patient">Patient</option>
+              <option value="practitioner">Practitioner</option>
+              <option value="admin">Admin</option>
+            </select>
           </div>
 
           <button 

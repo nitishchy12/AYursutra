@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { apiSaveDosha } from '../services/api';
+import { apiSaveDosha, mlApi } from '../services/api';
+import { Pie, PieChart, ResponsiveContainer, Tooltip, Cell } from 'recharts';
 import { doshaQuestions } from '../data/doshaQuestions';
 import { Link, useNavigate } from 'react-router-dom';
 import { Leaf, ArrowRight, ArrowLeft, CheckCircle } from 'lucide-react';
@@ -45,43 +46,12 @@ const DoshaTest = () => {
     }
 
     setIsSubmitting(true);
-    let scores = { vata: 0, pitta: 0, kapha: 0 };
-    
-    // Calculate scores
-    Object.values(answers).forEach(answer => {
-      scores[answer] = (scores[answer] || 0) + 1;
-    });
-
-    // Determine primary dosha
-    let maxDosha = 'vata';
-    let maxScore = scores.vata;
-
-    if (scores.pitta > maxScore) {
-      maxDosha = 'pitta';
-      maxScore = scores.pitta;
-    }
-    if (scores.kapha > maxScore) {
-      maxDosha = 'kapha';
-      maxScore = scores.kapha;
-    }
-
-    const calculatedDosha = maxDosha.charAt(0).toUpperCase() + maxDosha.slice(1);
-    
-    const finalResult = {
-      dosha: calculatedDosha,
-      scores
-    };
-    
+    const mlResult = await mlApi.prakriti(answers);
+    const finalResult = { dosha: mlResult.prakriti, scores: mlResult.scores, confidence: mlResult.confidence, explanation: mlResult.explanation };
     setResult(finalResult);
-
-    // Save to backend if user is logged in
     if (currentUser) {
-      try {
-        await apiSaveDosha(calculatedDosha, scores);
-        await refreshUserData();
-      } catch (error) {
-        console.error("Error saving dosha result:", error);
-      }
+      await apiSaveDosha(finalResult.dosha, finalResult.scores);
+      await refreshUserData();
     }
     
     setIsSubmitting(false);
@@ -205,6 +175,15 @@ const DoshaTest = () => {
         
         <div style={{ backgroundColor: 'var(--bg-color)', padding: '1.5rem', borderRadius: 'var(--radius-md)', marginBottom: '2rem', textAlign: 'left' }}>
           <h3 style={{ marginBottom: '1rem', fontSize: '1.2rem' }}>What this means for you:</h3>
+          <p style={{ color: 'var(--text-secondary)', lineHeight: '1.6' }}>{result.explanation}</p>
+          <ResponsiveContainer width="100%" height={220}>
+            <PieChart>
+              <Pie data={Object.entries(result.scores).map(([name, value]) => ({ name, value }))} dataKey="value" nameKey="name" outerRadius={80} label>
+                {['#4CAF50', '#FFB300', '#8D6E63'].map((color) => <Cell key={color} fill={color} />)}
+              </Pie>
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
           {result.dosha === 'Vata' && (
             <p style={{ color: 'var(--text-secondary)', lineHeight: '1.6' }}>
               Vata types are energetic, creative, and quick-thinking. When out of balance, they can become anxious or experience dry skin and irregular digestion. Favor warm, grounding foods and maintain a regular daily routine.

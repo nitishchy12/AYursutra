@@ -1,7 +1,7 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { apiGetMe, apiLogin, apiRegister, apiLogout, hasToken } from '../services/api';
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { authApi, getAccessToken } from '../services/api';
 
-const AuthContext = createContext();
+const AuthContext = createContext(null);
 
 export function useAuth() {
   return useContext(AuthContext);
@@ -9,77 +9,52 @@ export function useAuth() {
 
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
-  const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // On mount, check if we have a stored token and restore session
   useEffect(() => {
-    const restoreSession = async () => {
-      if (!hasToken()) {
-        setLoading(false);
-        return;
-      }
-
+    let active = true;
+    async function restoreSession() {
       try {
-        const data = await apiGetMe();
-        setCurrentUser(data.user);
-        setUserData(data.user);
-      } catch (error) {
-        // Token invalid or expired — clear it
-        console.error('Session restore failed:', error);
-        apiLogout();
-        setCurrentUser(null);
-        setUserData(null);
+        const data = getAccessToken() ? await authApi.me() : await authApi.refresh();
+        if (active) setCurrentUser(data.user);
+      } catch {
+        if (active) setCurrentUser(null);
+      } finally {
+        if (active) setLoading(false);
       }
-      setLoading(false);
-    };
-
+    }
     restoreSession();
+    return () => { active = false; };
   }, []);
 
-  const login = async (email, password) => {
-    const data = await apiLogin(email, password);
-    setCurrentUser(data.user);
-    setUserData(data.user);
-    return data;
-  };
-
-  const register = async (name, email, password) => {
-    const data = await apiRegister(name, email, password);
-    setCurrentUser(data.user);
-    setUserData(data.user);
-    return data;
-  };
-
-  const logout = () => {
-    apiLogout();
-    setCurrentUser(null);
-    setUserData(null);
-  };
-
-  const refreshUserData = async () => {
-    try {
-      const data = await apiGetMe();
-      setCurrentUser(data.user);
-      setUserData(data.user);
-    } catch (error) {
-      console.error('Refresh user data failed:', error);
-    }
-  };
-
-  const value = {
+  const value = useMemo(() => ({
     currentUser,
-    userData,
+    userData: currentUser,
     loading,
-    login,
-    register,
-    logout,
-    refreshUserData,
-  };
+    async login(email, password) {
+      const data = await authApi.login({ email, password });
+      setCurrentUser(data.user);
+      return data;
+    },
+    async register(name, email, password, role = 'patient', extra = {}) {
+      const data = await authApi.register({ name, email, password, role, ...extra });
+      setCurrentUser(data.user);
+      return data;
+    },
+    async logout() {
+      try {
+        await authApi.logout();
+      } finally {
+        setCurrentUser(null);
+      }
+    },
+    async refreshUserData() {
+      const data = await authApi.me();
+      setCurrentUser(data.user);
+      return data.user;
+    },
+  }), [currentUser, loading]);
 
-  return (
-    <AuthContext.Provider value={value}>
-      {!loading && children}
-    </AuthContext.Provider>
-  );
+  if (loading) return <div className="page container">Loading AyurSutra...</div>;
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
