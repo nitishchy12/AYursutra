@@ -1,10 +1,7 @@
 const Patient = require('../models/Patient');
 const Therapy = require('../models/Therapy');
 const Appointment = require('../models/Appointment');
-
-async function patientForUser(userId) {
-  return Patient.findOne({ userId, deletedAt: null });
-}
+const { getPatientForUser, getOrCreatePatientForUser } = require('../services/patientProfileService');
 
 exports.listPatients = async (req, res) => {
   const page = Number(req.query.page || 1);
@@ -18,13 +15,13 @@ exports.listPatients = async (req, res) => {
 };
 
 exports.myProfile = async (req, res) => {
-  const profile = await patientForUser(req.user._id);
+  const profile = req.user.role === 'patient' ? await getOrCreatePatientForUser(req.user) : null;
   res.json({ success: true, message: 'Patient profile loaded', data: profile });
 };
 
 exports.createPatient = async (req, res) => {
   const userId = req.user.role === 'patient' ? req.user._id : req.body.userId;
-  const existing = await patientForUser(userId);
+  const existing = await getPatientForUser(userId);
   if (existing) return res.status(409).json({ success: false, message: 'Patient profile already exists', code: 409 });
   const profile = await Patient.create({ ...req.body, userId });
   res.status(201).json({ success: true, message: 'Patient created', data: profile });
@@ -42,7 +39,7 @@ exports.getPatient = async (req, res) => {
 };
 
 exports.updatePatient = async (req, res) => {
-  const profile = req.params.id === 'me' ? await patientForUser(req.user._id) : await Patient.findById(req.params.id);
+  const profile = req.params.id === 'me' ? await getOrCreatePatientForUser(req.user) : await Patient.findById(req.params.id);
   if (!profile) return res.status(404).json({ success: false, message: 'Patient not found', code: 404 });
   if (req.user.role === 'patient' && String(profile.userId) !== String(req.user._id)) return res.status(403).json({ success: false, message: 'Forbidden', code: 403 });
   Object.assign(profile, req.body);

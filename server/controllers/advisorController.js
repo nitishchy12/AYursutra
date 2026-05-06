@@ -2,9 +2,10 @@ const Patient = require('../models/Patient');
 const Therapy = require('../models/Therapy');
 const Feedback = require('../models/Feedback');
 const { askAdvisor } = require('../services/geminiService');
+const { getOrCreatePatientForUser } = require('../services/patientProfileService');
 
 exports.ask = async (req, res) => {
-  const patient = req.user.role === 'patient' ? await Patient.findOne({ userId: req.user._id }) : await Patient.findById(req.body.patientId);
+  const patient = req.user.role === 'patient' ? await getOrCreatePatientForUser(req.user) : await Patient.findById(req.body.patientId);
   if (!patient) return res.status(404).json({ success: false, message: 'Patient profile not found', code: 404 });
   const therapies = await Therapy.find({ patientId: patient._id }).sort('-scheduledDate').limit(5);
   const feedback = await Feedback.find({ patientId: patient._id }).sort('-createdAt').limit(5);
