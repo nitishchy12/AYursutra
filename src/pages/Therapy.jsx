@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Sparkles, Heart, Wind, Shield, Activity, ArrowRight, Video, MapPin, Calendar } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import heroImage from '../assets/hero.png';
 
 const therapySessions = [
   {
@@ -65,7 +66,7 @@ const Therapy = () => {
           left: 0,
           width: '100%',
           height: '100%',
-          backgroundImage: `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('/ayurvedic_therapy_hero_1773497431792.png')`,
+          backgroundImage: `linear-gradient(rgba(30, 18, 12, 0.48), rgba(30, 18, 12, 0.48)), url(${heroImage})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           filter: 'brightness(0.8)',
@@ -82,7 +83,7 @@ const Therapy = () => {
       </section>
 
       {/* Quick Actions */}
-      <div className="grid-3" style={{ marginBottom: '4rem' }}>
+      <div className="grid grid-cols-3" style={{ marginBottom: '4rem' }}>
         <Link to="/appointments" className="card hover-scale" style={{ textAlign: 'center', padding: '2rem', textDecoration: 'none', color: 'inherit' }}>
           <Calendar size={48} color="var(--primary-color)" style={{ marginBottom: '1rem' }} />
           <h3>Book Session</h3>
@@ -110,7 +111,7 @@ const Therapy = () => {
         </div>
       </header>
 
-      <div className="grid-2">
+      <div className="grid grid-cols-2">
         {therapySessions.map((session) => (
           <div key={session.id} className="card" style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '2rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
@@ -153,7 +154,7 @@ const Therapy = () => {
 
       {/* Guide Section */}
       <section className="card" style={{ marginTop: '5rem', backgroundColor: 'var(--primary-dark)', color: 'white', padding: '3rem' }}>
-        <div className="grid-2" style={{ alignItems: 'center' }}>
+        <div className="grid grid-cols-2" style={{ alignItems: 'center' }}>
           <div>
             <h2 style={{ fontSize: '2.5rem', marginBottom: '1.5rem' }}>Not sure which therapy is right?</h2>
             <p style={{ opacity: 0.9, fontSize: '1.1rem', marginBottom: '2rem' }}>

@@ -5,6 +5,29 @@ import { Pie, PieChart, ResponsiveContainer, Tooltip, Cell } from 'recharts';
 import { doshaQuestions } from '../data/doshaQuestions';
 import { Link, useNavigate } from 'react-router-dom';
 import { Leaf, ArrowRight, ArrowLeft, CheckCircle } from 'lucide-react';
+import toast from 'react-hot-toast';
+
+const explanations = {
+  Vata: 'Your responses show a Vata tendency: movement, variability, creativity, and sensitivity. Favor warmth, routine, grounding meals, oil massage, and steady rest.',
+  Pitta: 'Your responses show a Pitta tendency: focus, intensity, sharp digestion, and warmth. Favor cooling foods, calm pacing, hydration, shade, and regular relaxation.',
+  Kapha: 'Your responses show a Kapha tendency: steadiness, endurance, calm, and structure. Favor light warm meals, active movement, variety, and stimulating routines.',
+};
+
+function calculateLocalResult(answers) {
+  const scores = { vata: 0, pitta: 0, kapha: 0 };
+  Object.values(answers).forEach((answer) => {
+    if (scores[answer] !== undefined) scores[answer] += 1;
+  });
+  const total = Object.values(scores).reduce((sum, score) => sum + score, 0) || 1;
+  const winner = Object.entries(scores).sort((a, b) => b[1] - a[1])[0][0];
+  const dosha = winner.charAt(0).toUpperCase() + winner.slice(1);
+  return {
+    dosha,
+    scores,
+    confidence: Math.round((scores[winner] / total) * 100),
+    explanation: explanations[dosha],
+  };
+}
 
 const DoshaTest = () => {
   const { currentUser, refreshUserData } = useAuth();
@@ -46,16 +69,30 @@ const DoshaTest = () => {
     }
 
     setIsSubmitting(true);
-    const mlResult = await mlApi.prakriti(answers);
-    const finalResult = { dosha: mlResult.prakriti, scores: mlResult.scores, confidence: mlResult.confidence, explanation: mlResult.explanation };
-    setResult(finalResult);
-    if (currentUser) {
-      await apiSaveDosha(finalResult.dosha, finalResult.scores);
-      await refreshUserData();
+    try {
+      let finalResult;
+      try {
+        const mlResult = await mlApi.prakriti(answers);
+        finalResult = { dosha: mlResult.prakriti, scores: mlResult.scores, confidence: mlResult.confidence, explanation: mlResult.explanation };
+      } catch {
+        finalResult = calculateLocalResult(answers);
+        toast('Using local Dosha scoring because the assessment service is busy.');
+      }
+
+      setResult(finalResult);
+      setCurrentStep('result');
+
+      if (currentUser) {
+        try {
+          await apiSaveDosha(finalResult.dosha, finalResult.scores);
+          await refreshUserData();
+        } catch {
+          toast.error('Result shown, but saving to your profile failed. Please try again later.');
+        }
+      }
+    } finally {
+      setIsSubmitting(false);
     }
-    
-    setIsSubmitting(false);
-    setCurrentStep('result');
   };
 
   const renderStartScreen = () => (
