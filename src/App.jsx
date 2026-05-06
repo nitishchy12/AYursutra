@@ -33,14 +33,38 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
-            <Route path="/remedies" element={<Remedies />} />
-            <Route path="/dosha-test" element={<DoshaTest />} />
-            <Route path="/chat" element={<Chat />} />
-            <Route path="/community" element={<Community />} />
-            <Route path="/therapy" element={<Therapy />} />
-            <Route path="/centers" element={<SessionCenters />} />
             
             {/* Protected Routes */}
+            <Route path="/remedies" element={
+              <ProtectedRoute>
+                <Remedies />
+              </ProtectedRoute>
+            } />
+            <Route path="/dosha-test" element={
+              <ProtectedRoute>
+                <DoshaTest />
+              </ProtectedRoute>
+            } />
+            <Route path="/chat" element={
+              <ProtectedRoute>
+                <Chat />
+              </ProtectedRoute>
+            } />
+            <Route path="/community" element={
+              <ProtectedRoute>
+                <Community />
+              </ProtectedRoute>
+            } />
+            <Route path="/therapy" element={
+              <ProtectedRoute>
+                <Therapy />
+              </ProtectedRoute>
+            } />
+            <Route path="/centers" element={
+              <ProtectedRoute>
+                <SessionCenters />
+              </ProtectedRoute>
+            } />
             <Route path="/appointments" element={
               <ProtectedRoute>
                 <Appointments />

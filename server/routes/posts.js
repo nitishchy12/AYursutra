@@ -1,6 +1,6 @@
 const express = require('express');
 const Post = require('../models/Post');
-const { protect, optionalAuth } = require('../middleware/auth');
+const { protect } = require('../middleware/auth');
 const { asyncHandler } = require('../middleware/errorHandler');
 
 const router = express.Router();
@@ -21,9 +21,9 @@ function formatPost(post, userId) {
   };
 }
 
-router.get('/', optionalAuth, asyncHandler(async (req, res) => {
+router.get('/', protect, asyncHandler(async (req, res) => {
   const posts = await Post.find().populate('author', 'name').sort({ createdAt: -1 });
-  res.json({ success: true, data: posts.map((post) => formatPost(post, req.user?._id)), posts: posts.map((post) => formatPost(post, req.user?._id)) });
+  res.json({ success: true, data: posts.map((post) => formatPost(post, req.user._id)), posts: posts.map((post) => formatPost(post, req.user._id)) });
 }));
 
 router.post('/', protect, asyncHandler(async (req, res) => {

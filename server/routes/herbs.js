@@ -2,8 +2,10 @@ const express = require('express');
 const Herb = require('../models/Herb');
 const { seedHerbs } = require('../scripts/seedHerbs');
 const { asyncHandler } = require('../middleware/errorHandler');
+const { auth, authorize } = require('../middleware/auth');
 
 const router = express.Router();
+router.use(auth);
 
 router.get('/', asyncHandler(async (req, res) => {
   const page = Math.max(Number(req.query.page || 1), 1);
@@ -31,7 +33,7 @@ router.get('/', asyncHandler(async (req, res) => {
   res.json({ success: true, data, herbs: data, total, page, limit });
 }));
 
-router.post('/seed', asyncHandler(async (req, res) => {
+router.post('/seed', authorize('admin'), asyncHandler(async (req, res) => {
   const result = await seedHerbs();
   const herbs = await Herb.find().sort('name').lean();
   res.status(201).json({ success: true, message: `Seeded ${result.count} herbs`, data: herbs, herbs, total: herbs.length });
