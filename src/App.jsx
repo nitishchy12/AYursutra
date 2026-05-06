@@ -38,10 +38,14 @@ function App() {
             <Route path="/chat" element={<Chat />} />
             <Route path="/community" element={<Community />} />
             <Route path="/therapy" element={<Therapy />} />
-            <Route path="/appointments" element={<Appointments />} />
             <Route path="/centers" element={<SessionCenters />} />
             
             {/* Protected Routes */}
+            <Route path="/appointments" element={
+              <ProtectedRoute>
+                <Appointments />
+              </ProtectedRoute>
+            } />
             <Route path="/dashboard" element={
               <ProtectedRoute>
                 <Dashboard />

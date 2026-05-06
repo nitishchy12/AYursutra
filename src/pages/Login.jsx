@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Leaf } from 'lucide-react';
 
@@ -9,7 +9,11 @@ const Login = () => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAuth();
+  const redirectTo = location.state?.from?.pathname
+    ? `${location.state.from.pathname}${location.state.from.search || ''}${location.state.from.hash || ''}`
+    : '/dashboard';
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -17,7 +21,7 @@ const Login = () => {
     setIsLoading(true);
     try {
       await login(email, password);
-      navigate('/dashboard');
+      navigate(redirectTo, { replace: true });
     } catch (err) {
       setError(err.message);
     } finally {

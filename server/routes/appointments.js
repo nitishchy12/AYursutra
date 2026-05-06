@@ -32,7 +32,7 @@ router.get('/', protect, authorize('practitioner', 'admin'), asyncHandler(async 
   res.json({ success: true, data: appointments, appointments });
 }));
 
-router.post('/', protect, asyncHandler(async (req, res) => {
+router.post('/', protect, authorize('patient'), asyncHandler(async (req, res) => {
   const { therapyType, centerName = '', scheduledDate, scheduledTime, notes = '' } = req.body;
   if (!Appointment.therapyTypes.includes(therapyType)) return res.status(400).json({ success: false, message: 'Invalid therapy type' });
   if (!scheduledDate || !scheduledTime) return res.status(400).json({ success: false, message: 'Date and time are required' });
