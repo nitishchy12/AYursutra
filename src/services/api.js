@@ -179,7 +179,7 @@ export async function apiRegister(name, email, password, role = 'patient') { ret
 export async function apiGetMe() { return authApi.me(); }
 export function apiLogout() { return authApi.logout(); }
 export function hasToken() { return !!getAccessToken(); }
-export async function apiSaveDosha(dosha, doshaScores) { return userApi.saveDosha({ dosha, doshaScores }); }
+export async function apiSaveDosha(dosha, doshaScores, explanation = '') { return userApi.saveDosha({ dosha, doshaScores, explanation }); }
 export async function apiGetPosts() { return api.get('/posts'); }
 export async function apiCreatePost(content) { return api.post('/posts', { content }); }
 export async function apiToggleLike(postId) { return api.put(`/posts/${postId}/like`); }

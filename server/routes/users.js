@@ -2,9 +2,18 @@ const express = require('express');
 const User = require('../models/User');
 const { protect } = require('../middleware/auth');
 const { asyncHandler } = require('../middleware/errorHandler');
+const { getOrCreatePatientForUser } = require('../services/patientProfileService');
 
 const router = express.Router();
-const allowedDoshas = ['Vata', 'Pitta', 'Kapha', 'Vata-Pitta', 'Pitta-Kapha', 'Vata-Kapha', 'Tridosha'];
+const allowedDoshas = ['Vata', 'Pitta', 'Kapha', 'Vata-Pitta', 'Pitta-Kapha', 'Vata-Kapha', 'Tridosha', 'Tridoshic'];
+
+function normalizeUserDosha(dosha) {
+  return dosha === 'Tridoshic' ? 'Tridosha' : dosha;
+}
+
+function normalizePatientPrakriti(dosha) {
+  return dosha === 'Tridosha' ? 'Tridoshic' : dosha;
+}
 
 router.get('/me', protect, asyncHandler(async (req, res) => {
   res.json({ success: true, data: req.user.toJSON(), user: req.user.toJSON() });
@@ -22,7 +31,7 @@ router.put('/dosha', protect, asyncHandler(async (req, res) => {
     req.user._id,
     {
       $set: {
-        dosha,
+        dosha: normalizeUserDosha(dosha),
         doshaScores: {
           vata: Number(doshaScores.vata),
           pitta: Number(doshaScores.pitta),
@@ -33,6 +42,11 @@ router.put('/dosha', protect, asyncHandler(async (req, res) => {
     },
     { new: true, runValidators: true },
   );
+  const patient = await getOrCreatePatientForUser(updatedUser);
+  patient.prakriti = normalizePatientPrakriti(dosha);
+  patient.prakritiScores = updatedUser.doshaScores;
+  patient.prakritiExplanation = req.body.explanation || patient.prakritiExplanation;
+  await patient.save();
   res.json({ success: true, data: updatedUser.toJSON(), user: updatedUser.toJSON() });
 }));
 

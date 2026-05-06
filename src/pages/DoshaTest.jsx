@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { apiSaveDosha, mlApi } from '../services/api';
+import { apiSaveDosha } from '../services/api';
 import { Pie, PieChart, ResponsiveContainer, Tooltip, Cell } from 'recharts';
 import { doshaQuestions } from '../data/doshaQuestions';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Leaf, ArrowRight, ArrowLeft, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -31,7 +31,6 @@ function calculateLocalResult(answers) {
 
 const DoshaTest = () => {
   const { currentUser, refreshUserData } = useAuth();
-  const navigate = useNavigate();
   
   const [currentStep, setCurrentStep] = useState('start'); // start, question, result
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -70,21 +69,13 @@ const DoshaTest = () => {
 
     setIsSubmitting(true);
     try {
-      let finalResult;
-      try {
-        const mlResult = await mlApi.prakriti(answers);
-        finalResult = { dosha: mlResult.prakriti, scores: mlResult.scores, confidence: mlResult.confidence, explanation: mlResult.explanation };
-      } catch {
-        finalResult = calculateLocalResult(answers);
-        toast('Using local Dosha scoring because the assessment service is busy.');
-      }
-
+      const finalResult = calculateLocalResult(answers);
       setResult(finalResult);
       setCurrentStep('result');
 
       if (currentUser) {
         try {
-          await apiSaveDosha(finalResult.dosha, finalResult.scores);
+          await apiSaveDosha(finalResult.dosha, finalResult.scores, finalResult.explanation);
           await refreshUserData();
         } catch {
           toast.error('Result shown, but saving to your profile failed. Please try again later.');
