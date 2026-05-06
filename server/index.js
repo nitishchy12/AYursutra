@@ -27,6 +27,8 @@ const { autoSeed } = require('./scripts/seedAll');
 const { configureMongoDns } = require('./config/mongoDns');
 
 const app = express();
+app.set('trust proxy', 1);
+
 const allowedOrigins = (process.env.CLIENT_URL || process.env.FRONTEND_URL || 'http://localhost:5173')
   .split(',')
   .map((origin) => origin.trim());

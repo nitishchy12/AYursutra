@@ -61,7 +61,11 @@ api.interceptors.response.use(
     }
     const message = error.response?.data?.message || error.message || 'Something went wrong';
     if (!original?.silent) toast.error(message);
-    return Promise.reject(new Error(message));
+    const normalizedError = new Error(message);
+    normalizedError.status = status;
+    normalizedError.code = error.response?.data?.code;
+    normalizedError.retryAfter = error.response?.headers?.['retry-after'];
+    return Promise.reject(normalizedError);
   },
 );
 

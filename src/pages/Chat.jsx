@@ -24,10 +24,13 @@ export default function Chat() {
       const data = await advisorApi.chat(question);
       setMessages((items) => [...items, { id: Date.now() + 1, role: 'ai', text: data.answer }]);
     } catch (error) {
+      const text = error.status === 429
+        ? 'The advisor is receiving too many requests right now. Please wait a minute, then send one question at a time.'
+        : 'I could not reach the AI advisor right now. Please try again in a moment, and follow your practitioner instructions for urgent symptoms.';
       setMessages((items) => [...items, {
         id: Date.now() + 1,
         role: 'ai',
-        text: 'I could not reach the AI advisor right now. Please try again in a moment, and follow your practitioner instructions for urgent symptoms.',
+        text,
       }]);
     } finally {
       setLoading(false);
