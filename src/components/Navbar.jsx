@@ -87,12 +87,16 @@ const Navbar = () => {
 
         {/* Desktop Menu */}
         <div style={desktopMenuStyle} className="hidden-mobile">
-          <Link style={navLinkStyle} to="/remedies">Herbs</Link>
-          <Link style={navLinkStyle} to="/dosha-test">Dosha Test</Link>
-          <Link style={navLinkStyle} to="/therapy">Therapy</Link>
-          <Link style={navLinkStyle} to="/centers">Centers</Link>
-          <Link style={navLinkStyle} to="/chat">AI Advisor</Link>
-          <Link style={navLinkStyle} to="/community">Community</Link>
+          {currentUser && (
+            <>
+              <Link style={navLinkStyle} to="/remedies">Herbs</Link>
+              <Link style={navLinkStyle} to="/dosha-test">Dosha Test</Link>
+              <Link style={navLinkStyle} to="/therapy">Therapy</Link>
+              <Link style={navLinkStyle} to="/centers">Centers</Link>
+              <Link style={navLinkStyle} to="/chat">AI Advisor</Link>
+              <Link style={navLinkStyle} to="/community">Community</Link>
+            </>
+          )}
           
           <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
             {currentUser ? (
@@ -123,12 +127,16 @@ const Navbar = () => {
 
       {/* Mobile Menu */}
       <div style={mobileMenuStyle}>
-        <Link style={navLinkStyle} to="/remedies" onClick={toggleMenu}>Herbs</Link>
-        <Link style={navLinkStyle} to="/dosha-test" onClick={toggleMenu}>Dosha Test</Link>
-        <Link style={navLinkStyle} to="/therapy" onClick={toggleMenu}>Therapy</Link>
-        <Link style={navLinkStyle} to="/centers" onClick={toggleMenu}>Centers</Link>
-        <Link style={navLinkStyle} to="/chat" onClick={toggleMenu}>AI Advisor</Link>
-        <Link style={navLinkStyle} to="/community" onClick={toggleMenu}>Community</Link>
+        {currentUser && (
+          <>
+            <Link style={navLinkStyle} to="/remedies" onClick={toggleMenu}>Herbs</Link>
+            <Link style={navLinkStyle} to="/dosha-test" onClick={toggleMenu}>Dosha Test</Link>
+            <Link style={navLinkStyle} to="/therapy" onClick={toggleMenu}>Therapy</Link>
+            <Link style={navLinkStyle} to="/centers" onClick={toggleMenu}>Centers</Link>
+            <Link style={navLinkStyle} to="/chat" onClick={toggleMenu}>AI Advisor</Link>
+            <Link style={navLinkStyle} to="/community" onClick={toggleMenu}>Community</Link>
+          </>
+        )}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '1rem' }}>
           {currentUser ? (
             <>

@@ -3,6 +3,28 @@ const Therapy = require('../models/Therapy');
 const Appointment = require('../models/Appointment');
 const { getPatientForUser, getOrCreatePatientForUser } = require('../services/patientProfileService');
 
+function normalizeGender(gender) {
+  const value = String(gender || '').trim().toLowerCase();
+  if (!value) return '';
+  if (value === 'male') return 'Male';
+  if (value === 'female') return 'Female';
+  if (value === 'other') return 'Other';
+  if (value === 'prefer not to say') return 'Prefer not to say';
+  return gender;
+}
+
+function normalizePatientPayload(body) {
+  const payload = { ...body };
+  if (payload.gender !== undefined) payload.gender = normalizeGender(payload.gender);
+  ['age', 'weight', 'height'].forEach((field) => {
+    if (payload[field] === '') payload[field] = null;
+    if (payload[field] !== undefined && payload[field] !== null) payload[field] = Number(payload[field]);
+  });
+  delete payload.userId;
+  delete payload.deletedAt;
+  return payload;
+}
+
 exports.listPatients = async (req, res) => {
   const page = Number(req.query.page || 1);
   const limit = Math.min(Number(req.query.limit || 10), 50);
@@ -39,10 +61,11 @@ exports.getPatient = async (req, res) => {
 };
 
 exports.updatePatient = async (req, res) => {
-  const profile = req.params.id === 'me' ? await getOrCreatePatientForUser(req.user) : await Patient.findById(req.params.id);
+  const isMyProfile = req.params.id === 'me' || req.path === '/me' || !req.params.id;
+  const profile = isMyProfile ? await getOrCreatePatientForUser(req.user) : await Patient.findById(req.params.id);
   if (!profile) return res.status(404).json({ success: false, message: 'Patient not found', code: 404 });
   if (req.user.role === 'patient' && String(profile.userId) !== String(req.user._id)) return res.status(403).json({ success: false, message: 'Forbidden', code: 403 });
-  Object.assign(profile, req.body);
+  Object.assign(profile, normalizePatientPayload(req.body));
   await profile.save();
   res.json({ success: true, message: 'Patient updated', data: profile });
 };

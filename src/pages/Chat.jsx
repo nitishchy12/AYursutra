@@ -1,17 +1,23 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { Navigate, useLocation } from 'react-router-dom';
 import { Leaf, Send, Sparkles, User } from 'lucide-react';
 import { advisorApi } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 const welcome = { id: 1, role: 'ai', text: 'Namaste. I can answer therapy, prakriti, recovery, and precaution questions using your AyurSutra patient context.' };
 const suggestions = ['Ask about my therapy', 'What precautions should I follow?', 'How is my recovery progressing?', 'What should I report to my practitioner?'];
 
 export default function Chat() {
+  const { currentUser } = useAuth();
+  const location = useLocation();
   const [messages, setMessages] = useState([welcome]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const endRef = useRef(null);
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, loading]);
+
+  if (!currentUser) return <Navigate to="/login" replace state={{ from: location }} />;
 
   async function send(e) {
     e?.preventDefault();
